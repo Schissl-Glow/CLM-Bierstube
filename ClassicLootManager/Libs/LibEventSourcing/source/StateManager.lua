@@ -101,6 +101,46 @@ local function restartIfRequired(stateManager, ignoreThrottle)
     end
     return true
 end
+local function finishInitialReplayMeasurement(stateManager, entries)
+    if stateManager.perfInitialReplayCompleted
+            or stateManager.perfReplayStart == nil
+            or stateManager.timeTraveling ~= nil
+            or stateManager.lastAppliedIndex < #entries
+    then
+        return
+    end
+
+    local elapsed = GetTimePreciseSec() - stateManager.perfReplayStart
+    local processed = stateManager.lastAppliedIndex - stateManager.perfReplayStartIndex
+    local rate = 0
+    if elapsed > 0 then
+        rate = processed / elapsed
+    end
+
+    if stateManager.adaptiveTimeBudget ~= nil then
+        print(string.format(
+            "CLM PERF: Ledger replay complete | Events: %d | Time: %.3f s | Rate: %.0f events/s | Mode: adaptive | MaxBatch: %d | Budget: %.1f ms | LargestBatch: %d | LongestTick: %.3f ms",
+            processed,
+            elapsed,
+            rate,
+            stateManager.batchSize,
+            stateManager.adaptiveTimeBudget * 1000,
+            stateManager.perfLargestBatchApplied or 0,
+            (stateManager.perfLongestBatchTime or 0) * 1000
+        ))
+    else
+        print(string.format(
+            "CLM PERF: Ledger replay complete | Events: %d | Time: %.3f s | Rate: %.0f events/s | Batch: %d",
+            processed,
+            elapsed,
+            rate,
+            stateManager.batchSize
+        ))
+    end
+
+    stateManager.perfInitialReplayCompleted = true
+end
+
 --[[
   This function plays new entries, it is called repeatedly on a timer.
   The goal of each call is to remain under the frame render time
@@ -108,6 +148,17 @@ end
 local function updateState(stateManager, batchSize)
     local entries = stateManager.list:entries()
     local applied = 0
+    local batchStart = GetTimePreciseSec()
+
+    if not stateManager.perfInitialReplayCompleted
+            and stateManager.perfReplayStart == nil
+            and stateManager.timeTraveling == nil
+            and stateManager.lastAppliedIndex < #entries
+    then
+        stateManager.perfReplayStart = batchStart
+        stateManager.perfReplayStartIndex = stateManager.lastAppliedIndex
+    end
+
     while applied < batchSize and stateManager.lastAppliedIndex < #entries do
         local entry = entries[stateManager.lastAppliedIndex + 1]
         stateManager:castLogEntry(entry)
@@ -120,10 +171,23 @@ local function updateState(stateManager, batchSize)
         -- This will throw an error if update fails, this is good since we don't want to update our tracking in that case.
         applyEntry(stateManager, entry, stateManager.lastAppliedIndex + 1)
         applied = applied + 1
+
+        if stateManager.adaptiveTimeBudget ~= nil and (GetTimePreciseSec() - batchStart) >= stateManager.adaptiveTimeBudget then
+            break
+        end
     end
+
     if applied > 0 then
+        local batchElapsed = GetTimePreciseSec() - batchStart
+        if applied > (stateManager.perfLargestBatchApplied or 0) then
+            stateManager.perfLargestBatchApplied = applied
+        end
+        if batchElapsed > (stateManager.perfLongestBatchTime or 0) then
+            stateManager.perfLongestBatchTime = batchElapsed
+        end
         trigger(stateManager, EVENT.STATE_CHANGED)
     end
+    finishInitialReplayMeasurement(stateManager, entries)
 end
 
 local function safeUpdateState(stateManager, limit)
@@ -158,6 +222,12 @@ function StateManager:new(list, logger)
     o.lastTick = 0
     o.measuredInterval = 0
     o.timeTraveling = nil
+    o.adaptiveTimeBudget = nil
+    o.perfReplayStart = nil
+    o.perfReplayStartIndex = 0
+    o.perfInitialReplayCompleted = false
+    o.perfLargestBatchApplied = 0
+    o.perfLongestBatchTime = 0
 
     o.handleIgnoreEntry = function(entry)
         o.ignoredEntries[entry.ref] = true;
@@ -278,6 +348,17 @@ function StateManager:getBatchSize()
     return self.batchSize
 end
 
+function StateManager:setAdaptiveUpdateTimeBudget(seconds)
+    if seconds ~= nil and type(seconds) ~= 'number' then
+        error("Adaptive update time budget must be a number or nil")
+    end
+    self.adaptiveTimeBudget = seconds
+end
+
+function StateManager:getAdaptiveUpdateTimeBudget()
+    return self.adaptiveTimeBudget
+end
+
 function StateManager:commitUncommittedEntries()
     for _, v in ipairs(self.uncommittedEntries) do
         if LogEntry.class(v) == nil then
@@ -327,6 +408,12 @@ end
 
 function StateManager:restart()
     self.logger:Info("Restarting state manager")
+    if not self.perfInitialReplayCompleted then
+        self.perfReplayStart = nil
+        self.perfReplayStartIndex = 0
+        self.perfLargestBatchApplied = 0
+        self.perfLongestBatchTime = 0
+    end
     self.lastAppliedIndex = 0
     self.lastAppliedEntry = nil
     self.lastRestartTime = GetTime()
