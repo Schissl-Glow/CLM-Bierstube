@@ -46,7 +46,7 @@ local function createLedger(self, database)
         (function(data, distribution, target, progressCallback)
             return CLM.MODULES.Comms:Send(CLM.COMM_CHANNEL.LEDGER.DATA, data, distribution, target, "NORMAL")
         end), -- sendLargeMessage
-        0, 100, LOG)
+        0, 1000, LOG)
 
         ledger.addSyncStateChangedListener(function(_, status)
             self:UpdateSyncState(status)
@@ -117,7 +117,9 @@ function LedgerManager:IsInitialized()
 end
 
 function LedgerManager:Enable()
-    self.activeLedger.getStateManager():setUpdateInterval(50)
+    local stateManager = self.activeLedger.getStateManager()
+    stateManager:setAdaptiveUpdateTimeBudget(0.003)
+    stateManager:setUpdateInterval(50)
     if CLM.GlobalConfigs:GetDisableSync() then
         LedgerManager:Cutoff()
         LOG:Message("Ledger synchronisation was disabled. Use this at your own risk.")
