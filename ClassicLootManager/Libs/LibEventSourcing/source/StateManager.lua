@@ -119,12 +119,14 @@ local function finishInitialReplayMeasurement(stateManager, entries)
 
     if stateManager.adaptiveTimeBudget ~= nil then
         print(string.format(
-            "CLM PERF: Ledger replay complete | Events: %d | Time: %.3f s | Rate: %.0f events/s | Mode: adaptive | MaxBatch: %d | Budget: %.1f ms | LargestBatch: %d | LongestTick: %.3f ms",
+            "CLM PERF: Ledger replay complete | Events: %d | Time: %.3f s | Rate: %.0f events/s | Mode: adaptive-v2 | MaxBatch: %d | Budget: %.1f ms | CheckEvery: %d | FastTimer: %d ms | LargestBatch: %d | LongestTick: %.3f ms",
             processed,
             elapsed,
             rate,
             stateManager.batchSize,
             stateManager.adaptiveTimeBudget * 1000,
+            stateManager.adaptiveTimeCheckStride or 1,
+            stateManager.configuredUpdateInterval or 0,
             stateManager.perfLargestBatchApplied or 0,
             (stateManager.perfLongestBatchTime or 0) * 1000
         ))
@@ -139,6 +141,12 @@ local function finishInitialReplayMeasurement(stateManager, entries)
     end
 
     stateManager.perfInitialReplayCompleted = true
+
+    if stateManager.postInitialReplayUpdateInterval ~= nil then
+        local interval = stateManager.postInitialReplayUpdateInterval
+        stateManager.postInitialReplayUpdateInterval = nil
+        stateManager:setUpdateInterval(interval)
+    end
 end
 
 --[[
@@ -172,7 +180,10 @@ local function updateState(stateManager, batchSize)
         applyEntry(stateManager, entry, stateManager.lastAppliedIndex + 1)
         applied = applied + 1
 
-        if stateManager.adaptiveTimeBudget ~= nil and (GetTimePreciseSec() - batchStart) >= stateManager.adaptiveTimeBudget then
+        if stateManager.adaptiveTimeBudget ~= nil
+                and (applied % (stateManager.adaptiveTimeCheckStride or 1) == 0)
+                and (GetTimePreciseSec() - batchStart) >= stateManager.adaptiveTimeBudget
+        then
             break
         end
     end
@@ -223,6 +234,9 @@ function StateManager:new(list, logger)
     o.measuredInterval = 0
     o.timeTraveling = nil
     o.adaptiveTimeBudget = nil
+    o.adaptiveTimeCheckStride = 1
+    o.postInitialReplayUpdateInterval = nil
+    o.configuredUpdateInterval = 0
     o.perfReplayStart = nil
     o.perfReplayStartIndex = 0
     o.perfInitialReplayCompleted = false
@@ -359,6 +373,24 @@ function StateManager:getAdaptiveUpdateTimeBudget()
     return self.adaptiveTimeBudget
 end
 
+function StateManager:setAdaptiveTimeCheckStride(stride)
+    if type(stride) ~= 'number' or stride < 1 then
+        error("Adaptive time check stride must be a positive number")
+    end
+    self.adaptiveTimeCheckStride = math.floor(stride)
+end
+
+function StateManager:getAdaptiveTimeCheckStride()
+    return self.adaptiveTimeCheckStride
+end
+
+function StateManager:setPostInitialReplayUpdateInterval(interval)
+    if type(interval) ~= 'number' or interval < 0 then
+        error("Post-initial replay update interval must be a non-negative number")
+    end
+    self.postInitialReplayUpdateInterval = interval
+end
+
 function StateManager:commitUncommittedEntries()
     for _, v in ipairs(self.uncommittedEntries) do
         if LogEntry.class(v) == nil then
@@ -375,6 +407,7 @@ end
   @param float the interval in milliseconds to use for updating state
 ]]--
 function StateManager:setUpdateInterval(interval)
+    self.configuredUpdateInterval = interval
     if self.ticker then
         self.ticker:Cancel()
     end
