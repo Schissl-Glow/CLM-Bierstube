@@ -119,7 +119,9 @@ end
 function LedgerManager:Enable()
     local stateManager = self.activeLedger.getStateManager()
     stateManager:setAdaptiveUpdateTimeBudget(0.003)
-    stateManager:setUpdateInterval(50)
+    stateManager:setAdaptiveTimeCheckStride(25)
+    stateManager:setPostInitialReplayUpdateInterval(50)
+    stateManager:setUpdateInterval(1)
     if CLM.GlobalConfigs:GetDisableSync() then
         LedgerManager:Cutoff()
         LOG:Message("Ledger synchronisation was disabled. Use this at your own risk.")
