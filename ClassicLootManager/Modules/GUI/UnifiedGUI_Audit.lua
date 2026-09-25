@@ -7,6 +7,22 @@ local CONSTANTS = CLM.CONSTANTS
 local UTILS     = CLM.UTILS
 -- ------------------------------- --
 
+local DAY_IN_SECONDS = 60 * 60 * 24
+local AUDIT_RANGE_SECONDS = {
+    ["60d"] = 60 * DAY_IN_SECONDS,
+    ["90d"] = 90 * DAY_IN_SECONDS,
+    ["180d"] = 180 * DAY_IN_SECONDS,
+    ["365d"] = 365 * DAY_IN_SECONDS,
+    ["all"] = 0,
+}
+local AUDIT_RANGE_LABELS = {
+    ["60d"] = "60d",
+    ["90d"] = "90d",
+    ["180d"] = "180d",
+    ["365d"] = "365d",
+    ["all"] = CLM.L["All"],
+}
+
 local function ST_GetDescription(row)
     return row.cols[4].value
 end
@@ -627,6 +643,7 @@ local UnifiedGUI_Audit = {
     }),
     nil, 3),
     tooltip = CreateFrame("GameTooltip", "CLMUnifiedGUIAuditDialogTooltip", UIParent, "GameTooltipTemplate"),
+    auditRangeKey = "60d",
 }
 
 ---@return table
@@ -639,7 +656,21 @@ function UnifiedGUI_Audit:GetSelection()
 end
 
 local function GenerateUntrustedOptions(self)
-    return self.filter:GetAceOptions()
+    local options = self.filter:GetAceOptions()
+    options.audit_range = {
+        name = CLM.L["Time"],
+        desc = "Limit audit rows to a recent time window. Choose All to load the complete ledger.",
+        type = "select",
+        values = AUDIT_RANGE_LABELS,
+        set = function(_, value)
+            self.auditRangeKey = value
+            refreshFn()
+        end,
+        get = function() return self.auditRangeKey end,
+        order = 10,
+        width = 0.75,
+    }
+    return options
 end
 
 local function GenerateOfficerOptions(self)
@@ -761,29 +792,38 @@ local function tableDataFeeder()
         end
     end)
 
-    local getData = (function()
-        return CLM.MODULES.LedgerManager:GetData()
-    end)
+    local function getData()
+        local seconds = AUDIT_RANGE_SECONDS[UnifiedGUI_Audit.auditRangeKey] or AUDIT_RANGE_SECONDS["60d"]
 
-    if CLM.IsHardcore() then
-        getData = (function()
-            return CLM.MODULES.LedgerManager:GetRecentData()
-        end)
+        -- Preserve the existing Hardcore safety limit of roughly two months.
+        if CLM.IsHardcore() then
+            seconds = math.min((seconds > 0 and seconds or AUDIT_RANGE_SECONDS["60d"]), AUDIT_RANGE_SECONDS["60d"])
+        end
+
+        if seconds <= 0 then
+            return CLM.MODULES.LedgerManager:GetData(), 1
+        end
+        return CLM.MODULES.LedgerManager:GetRecentData(seconds)
     end
+
+    local entries, startIndex = getData()
+    startIndex = startIndex or 1
 
     if CLM.MODULES.LedgerManager:IsTimeTraveling() then
         local timeTravelTarget = CLM.MODULES.LedgerManager:GetTimeTravelTarget()
-        for i,entry in ipairs(getData()) do
+        for i,entry in ipairs(entries) do
             if entry:time() > timeTravelTarget then
                 break
             end
-            data[#data+1] = buildEntryRow(entry, i)
-            fillIGNData(i, entry)
+            local ledgerIndex = startIndex + i - 1
+            data[#data+1] = buildEntryRow(entry, ledgerIndex)
+            fillIGNData(#data, entry)
         end
     else
-        for i,entry in ipairs(getData()) do
-            data[#data+1] = buildEntryRow(entry, i)
-            fillIGNData(i, entry)
+        for i,entry in ipairs(entries) do
+            local ledgerIndex = startIndex + i - 1
+            data[#data+1] = buildEntryRow(entry, ledgerIndex)
+            fillIGNData(#data, entry)
         end
     end
     return data
