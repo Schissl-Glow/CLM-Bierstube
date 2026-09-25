@@ -120,6 +120,7 @@ function LedgerManager:Enable()
     local stateManager = self.activeLedger.getStateManager()
     stateManager:setAdaptiveUpdateTimeBudget(0.003)
     stateManager:setAdaptiveTimeCheckStride(25)
+    stateManager:setPostInitialReplayBatchSize(100)
     stateManager:setPostInitialReplayUpdateInterval(50)
     stateManager:setUpdateInterval(1)
     if CLM.GlobalConfigs:GetDisableSync() then
