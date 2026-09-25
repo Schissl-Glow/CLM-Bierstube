@@ -142,6 +142,15 @@ local function finishInitialReplayMeasurement(stateManager, entries)
 
     stateManager.perfInitialReplayCompleted = true
 
+    if stateManager.postInitialReplayBatchSize ~= nil then
+        local batchSize = stateManager.postInitialReplayBatchSize
+        stateManager.postInitialReplayBatchSize = nil
+        stateManager:setBatchSize(batchSize)
+    end
+
+    stateManager.adaptiveTimeBudget = nil
+    stateManager.adaptiveTimeCheckStride = 1
+
     if stateManager.postInitialReplayUpdateInterval ~= nil then
         local interval = stateManager.postInitialReplayUpdateInterval
         stateManager.postInitialReplayUpdateInterval = nil
@@ -236,6 +245,7 @@ function StateManager:new(list, logger)
     o.adaptiveTimeBudget = nil
     o.adaptiveTimeCheckStride = 1
     o.postInitialReplayUpdateInterval = nil
+    o.postInitialReplayBatchSize = nil
     o.configuredUpdateInterval = 0
     o.perfReplayStart = nil
     o.perfReplayStartIndex = 0
@@ -389,6 +399,13 @@ function StateManager:setPostInitialReplayUpdateInterval(interval)
         error("Post-initial replay update interval must be a non-negative number")
     end
     self.postInitialReplayUpdateInterval = interval
+end
+
+function StateManager:setPostInitialReplayBatchSize(size)
+    if type(size) ~= 'number' or size < 1 then
+        error("Post-initial replay batch size must be a positive number")
+    end
+    self.postInitialReplayBatchSize = math.floor(size)
 end
 
 function StateManager:commitUncommittedEntries()
