@@ -101,6 +101,33 @@ local function restartIfRequired(stateManager, ignoreThrottle)
     end
     return true
 end
+local function finishInitialReplayMeasurement(stateManager, entries)
+    if stateManager.perfInitialReplayCompleted
+            or stateManager.perfReplayStart == nil
+            or stateManager.timeTraveling ~= nil
+            or stateManager.lastAppliedIndex < #entries
+    then
+        return
+    end
+
+    local elapsed = GetTimePreciseSec() - stateManager.perfReplayStart
+    local processed = stateManager.lastAppliedIndex - stateManager.perfReplayStartIndex
+    local rate = 0
+    if elapsed > 0 then
+        rate = processed / elapsed
+    end
+
+    print(string.format(
+        "CLM PERF: Ledger replay complete | Events: %d | Time: %.3f s | Rate: %.0f events/s | Batch: %d",
+        processed,
+        elapsed,
+        rate,
+        stateManager.batchSize
+    ))
+
+    stateManager.perfInitialReplayCompleted = true
+end
+
 --[[
   This function plays new entries, it is called repeatedly on a timer.
   The goal of each call is to remain under the frame render time
@@ -108,6 +135,15 @@ end
 local function updateState(stateManager, batchSize)
     local entries = stateManager.list:entries()
     local applied = 0
+
+    if not stateManager.perfInitialReplayCompleted
+            and stateManager.perfReplayStart == nil
+            and stateManager.timeTraveling == nil
+            and stateManager.lastAppliedIndex < #entries
+    then
+        stateManager.perfReplayStart = GetTimePreciseSec()
+        stateManager.perfReplayStartIndex = stateManager.lastAppliedIndex
+    end
     while applied < batchSize and stateManager.lastAppliedIndex < #entries do
         local entry = entries[stateManager.lastAppliedIndex + 1]
         stateManager:castLogEntry(entry)
@@ -124,6 +160,7 @@ local function updateState(stateManager, batchSize)
     if applied > 0 then
         trigger(stateManager, EVENT.STATE_CHANGED)
     end
+    finishInitialReplayMeasurement(stateManager, entries)
 end
 
 local function safeUpdateState(stateManager, limit)
@@ -158,6 +195,9 @@ function StateManager:new(list, logger)
     o.lastTick = 0
     o.measuredInterval = 0
     o.timeTraveling = nil
+    o.perfReplayStart = nil
+    o.perfReplayStartIndex = 0
+    o.perfInitialReplayCompleted = false
 
     o.handleIgnoreEntry = function(entry)
         o.ignoredEntries[entry.ref] = true;
