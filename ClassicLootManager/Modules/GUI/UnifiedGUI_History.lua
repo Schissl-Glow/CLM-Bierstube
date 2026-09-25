@@ -37,6 +37,7 @@ local HISTORY_LIMIT_LABELS = {
     ["1000"] = "1000",
     ["all"] = CLM.L["All"],
 }
+local HISTORY_LIMIT_ORDER = {"100", "250", "500", "1000", "all"}
 
 local function ST_GetInfo(row)
     return row.cols[2].value
@@ -174,6 +175,7 @@ local function GenerateUntrustedOptions(self)
         desc = "Only build rows for the newest entries in each selected history source. Choose All to restore the original full-history behavior.",
         type = "select",
         values = HISTORY_LIMIT_LABELS,
+        sorting = HISTORY_LIMIT_ORDER,
         set = function(_, value)
             self.historyLimitKey = value
             refreshFn()
