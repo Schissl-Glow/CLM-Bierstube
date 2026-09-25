@@ -23,6 +23,21 @@ CONSTANTS.HISTORY_TYPES_GUI = {
     [CONSTANTS.HISTORY_TYPE.POINT] = CLM.L["Point"]
 }
 
+local HISTORY_LIMITS = {
+    ["100"] = 100,
+    ["250"] = 250,
+    ["500"] = 500,
+    ["1000"] = 1000,
+    ["all"] = 0,
+}
+local HISTORY_LIMIT_LABELS = {
+    ["100"] = "100",
+    ["250"] = "250",
+    ["500"] = "500",
+    ["1000"] = "1000",
+    ["all"] = CLM.L["All"],
+}
+
 local function ST_GetInfo(row)
     return row.cols[2].value
 end
@@ -77,7 +92,8 @@ local UnifiedGUI_History = {
     nil, 3),
     -- tooltip = CreateFrame("GameTooltip", "CLMUnifiedGUIHistoryDialogTooltip", UIParent, "GameTooltipTemplate"),
     tooltip = GameTooltip,
-    historyType = CONSTANTS.HISTORY_TYPE.ALL
+    historyType = CONSTANTS.HISTORY_TYPE.ALL,
+    historyLimitKey = "250",
 }
 
 ---@return table lootList
@@ -152,6 +168,19 @@ local function GenerateUntrustedOptions(self)
         get = function(i) return self.historyType end,
         width = 0.75,
         order = 4
+    }
+    options.history_limit = {
+        name = "Limit",
+        desc = "Only build rows for the newest entries in each selected history source. Choose All to restore the original full-history behavior.",
+        type = "select",
+        values = HISTORY_LIMIT_LABELS,
+        set = function(_, value)
+            self.historyLimitKey = value
+            refreshFn()
+        end,
+        get = function() return self.historyLimitKey end,
+        width = 0.5,
+        order = 5
     }
     UTILS.mergeDictsInline(options, self.filter:GetAceOptions())
     return options
@@ -348,6 +377,17 @@ local function fillLootList(displayedLoot, loot)
     end
 end
 
+local function forLimitedHistoryEntries(list, callback)
+    local limit = HISTORY_LIMITS[UnifiedGUI_History.historyLimitKey] or HISTORY_LIMITS["250"]
+    local startIndex = 1
+    if limit > 0 and #list > limit then
+        startIndex = #list - limit + 1
+    end
+    for i = startIndex, #list do
+        callback(list[i])
+    end
+end
+
 local function tableDataFeeder()
     LOG:Trace("UnifiedGUI_History tableDataFeeder()")
     local data = {}
@@ -379,13 +419,13 @@ local function tableDataFeeder()
         local displayedLoot, displayedDe = {}, {}
         UnifiedGUI_History.pendingLoot = false
 
-        for _,loot in ipairs(lootList) do
+        forLimitedHistoryEntries(lootList, function(loot)
             fillLootList(displayedLoot, loot)
-        end
+        end)
 
-        for _,loot in ipairs(disenchantedList) do
+        forLimitedHistoryEntries(disenchantedList, function(loot)
             fillLootList(displayedDe, loot)
-        end
+        end)
 
         if UnifiedGUI_History.pendingLoot then
             return {{cols = { {value = ""}, {value = ""}, {value = CLM.L["Loading..."]}, {value = ""}, {value = nil}, {value = nil} }}}
@@ -443,7 +483,7 @@ local function tableDataFeeder()
             end
         end
         local player
-        for _,history in ipairs(pointList) do
+        forLimitedHistoryEntries(pointList, function(history)
             local reason = history:Reason() or 0
             local value = tostring(history:Value())
             if reason == CONSTANTS.POINT_CHANGE_REASON.DECAY then
@@ -474,7 +514,7 @@ local function tableDataFeeder()
                 {value = history}
             }}
             data[#data + 1] =  row
-        end
+        end)
     end
     return data
 end
