@@ -14,6 +14,27 @@ local GLOBAL_FAKE_INVENTORY_SLOT = "_GLOBAL"
 
 local SIX_MONTHS_IN_SECONDS = 60 * 60 * 24 * 30 * 6
 
+local function getRecentEntries(list, seconds, timestampFn)
+    local cutoff = time() - seconds
+    local startIndex = #list + 1
+
+    -- These history lists are populated chronologically during ledger replay.
+    -- Walk backwards and stop once we leave the requested window.
+    for i = #list, 1, -1 do
+        if timestampFn(list[i]) >= cutoff then
+            startIndex = i
+        else
+            break
+        end
+    end
+
+    local result = {}
+    for i = startIndex, #list do
+        result[#result+1] = list[i]
+    end
+    return result
+end
+
 local function fillSlotsArray(array)
     for key,_ in pairs(CONSTANTS.SLOT_VALUE_TIERS) do
         array[key] = 0
@@ -706,13 +727,9 @@ function Roster:GetRecentRaidLoot(seconds)
     if self.recentRaidLootCache and self.recentRaidLootCacheSeconds == seconds then
         return self.recentRaidLootCache
     end
-    local cutoff = time() - seconds
-    local result = {}
-    for _, loot in ipairs(self.raidLoot or {}) do
-        if loot:Timestamp() >= cutoff then
-            result[#result+1] = loot
-        end
-    end
+    local result = getRecentEntries(self.raidLoot or {}, seconds, function(loot)
+        return loot:Timestamp()
+    end)
     self.recentRaidLootCache = result
     self.recentRaidLootCacheSeconds = seconds
     return result
@@ -758,13 +775,9 @@ function Roster:GetRecentRaidPointHistory(seconds)
     if self.recentRaidPointHistoryCache and self.recentRaidPointHistoryCacheSeconds == seconds then
         return self.recentRaidPointHistoryCache
     end
-    local cutoff = time() - seconds
-    local result = {}
-    for _, entry in ipairs(self.pointHistory or {}) do
-        if entry:Timestamp() >= cutoff then
-            result[#result+1] = entry
-        end
-    end
+    local result = getRecentEntries(self.pointHistory or {}, seconds, function(entry)
+        return entry:Timestamp()
+    end)
     self.recentRaidPointHistoryCache = result
     self.recentRaidPointHistoryCacheSeconds = seconds
     return result
