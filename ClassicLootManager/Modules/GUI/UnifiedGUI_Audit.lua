@@ -22,6 +22,7 @@ local AUDIT_RANGE_LABELS = {
     ["365d"] = "365d",
     ["all"] = CLM.L["All"],
 }
+local AUDIT_RANGE_ORDER = {"60d", "90d", "180d", "365d", "all"}
 
 local function ST_GetDescription(row)
     return row.cols[4].value
@@ -662,6 +663,7 @@ local function GenerateUntrustedOptions(self)
         desc = "Limit audit rows to a recent time window. Choose All to load the complete ledger.",
         type = "select",
         values = AUDIT_RANGE_LABELS,
+        sorting = AUDIT_RANGE_ORDER,
         set = function(_, value)
             self.auditRangeKey = value
             refreshFn()
