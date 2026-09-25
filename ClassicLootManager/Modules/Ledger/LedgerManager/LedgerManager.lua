@@ -99,6 +99,7 @@ end
 ---@field timeTravelTarget number
 ---@field recentDataCache table?
 ---@field recentDataCacheSeconds number?
+---@field recentDataCacheStartIndex number?
 local LedgerManager = { _initialized = false}
 function LedgerManager:Initialize()
     self.activeDatabase = CLM.MODULES.Database:Ledger()
@@ -108,7 +109,11 @@ function LedgerManager:Initialize()
     self.onRestartCallbacks = {}
     self._initialized = true
 
-    self:RegisterOnUpdate(function() self.recentDataCache = nil end)
+    self:RegisterOnUpdate(function()
+        self.recentDataCache = nil
+        self.recentDataCacheSeconds = nil
+        self.recentDataCacheStartIndex = nil
+    end)
 end
 
 ---@return boolean
@@ -163,12 +168,16 @@ function LedgerManager:TimeTravel(timestamp)
     self.timeTravelTarget = timestamp
     self.activeLedger.getStateManager():travelToTime(timestamp)
     self.recentDataCache = nil
+    self.recentDataCacheSeconds = nil
+    self.recentDataCacheStartIndex = nil
     self:UpdateSyncState()
 end
 
 function LedgerManager:EndTimeTravel()
     self.activeLedger.getStateManager():stopTimeTravel()
     self.recentDataCache = nil
+    self.recentDataCacheSeconds = nil
+    self.recentDataCacheStartIndex = nil
     self:UpdateSyncState()
 end
 
@@ -339,26 +348,52 @@ function LedgerManager:GetData()
     return self.activeLedger.getSortedList():entries()
 end
 
----@param seconds number? timeframe in seconds (default & max: 2 months)
+---@param seconds number? timeframe in seconds (default: 2 months)
 ---@return table
+---@return number startIndex 1-based index of first returned entry in the full ledger
 function LedgerManager:GetRecentData(seconds)
-    seconds = math.min(seconds or TWO_MONTHS_IN_SECONDS, TWO_MONTHS_IN_SECONDS)
-    if self.recentDataCache and self.recentDataCacheSeconds == seconds then
-        return self.recentDataCache
+    seconds = tonumber(seconds) or TWO_MONTHS_IN_SECONDS
+    if seconds <= 0 then
+        return self:GetData(), 1
     end
+    if self.recentDataCache
+            and self.recentDataCacheSeconds == seconds
+            and self.recentDataCacheStartIndex
+    then
+        return self.recentDataCache, self.recentDataCacheStartIndex
+    end
+
+    local entries = self:GetData()
     local now = self:IsTimeTraveling() and self.timeTravelTarget or time()
     local cutoff = now - seconds
-    local result = {}
-    for _, entry in ipairs(self:GetData()) do
-        local entryTime = entry:time()
-        if entryTime > now then break end
-        if entryTime >= cutoff then
-            result[#result+1] = entry
+    local startIndex = #entries + 1
+
+    -- Ledger entries are chronological. Walk backwards and stop as soon as
+    -- we leave the requested window instead of scanning the complete ledger.
+    for i = #entries, 1, -1 do
+        local entryTime = entries[i]:time()
+        if entryTime > now then
+            -- Future entries can occur while time-travelling; keep looking backwards.
+        elseif entryTime >= cutoff then
+            startIndex = i
+        else
+            break
         end
     end
+
+    local result = {}
+    for i = startIndex, #entries do
+        local entry = entries[i]
+        if entry:time() > now then
+            break
+        end
+        result[#result+1] = entry
+    end
+
     self.recentDataCache = result
     self.recentDataCacheSeconds = seconds
-    return result
+    self.recentDataCacheStartIndex = startIndex
+    return result, startIndex
 end
 
 function LedgerManager:RequestPeerStatusFromRaid()
