@@ -1,0 +1,32 @@
+# World Buff Checker tests
+
+Run from the repository root with Lua 5.1:
+
+```sh
+lua tests/world_buff_checker_spec.lua
+lua tests/world_buff_gui_spec.lua
+```
+
+Alternatively use Python 3 with Lupa 2.6 (its `lupa.lua51` engine):
+
+```sh
+python -m pip install --target .release/test-tools lupa==2.6
+# Set PYTHONPATH to the absolute .release/test-tools directory.
+python tests/run_lua_tests.py
+```
+
+No WoW installation, SavedVariables, guild data, network or peer addon is used.
+The identities and durations are synthetic fixtures derived from the user's
+reported observations. The Warchief regression uses the explicitly reported
+3538 seconds. The eight-player case contains five positive Chronoboons and
+three unconfirmed observations; the fifth positive unit is invisible.
+
+Tests exercise the real scanner through its public Scan method with a Blizzard
+API adapter, and the real GUI against an AceGUI boundary stub. The GUI test
+checks manual invocation, profile invalidation, GUID row deduplication and
+details. These tests do not certify real-client aura availability, visual
+layout, multiplayer behavior or Blizzard timing.
+
+Existing Ledger/Replay, DKP, raid start/end, auction and communication code is
+outside this feature's write scope. Compare those paths with the base commit
+5a5787752c95a9ad495239ea1732425bea9a1d21 when reviewing the branch.
