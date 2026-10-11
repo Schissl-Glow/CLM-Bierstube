@@ -223,7 +223,16 @@ end
 local function verticalOptionsFeeder()
     local options = {
         type = "group",
-        args = {}
+        args = {
+            world_buff_checker = {
+                name = CLM.L["World Buff Checker"],
+                type = "execute",
+                width = "full",
+                order = 1,
+                hidden = function() return not CLM.IsHardcore() end,
+                func = function() CLM.GUI.WorldBuffChecker:Show() end,
+            },
+        }
     }
     -- UTILS.mergeDictsInline(options.args, GenerateUntrustedOptions(UnifiedGUI_Raids))
     if CLM.MODULES.ACL:CheckLevel(CONSTANTS.ACL.LEVEL.ASSISTANT) then

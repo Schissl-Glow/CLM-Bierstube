@@ -2,4 +2,5 @@
 	..\FrameXML\UI.xsd">
 	<Include file="RaidManager\_filelist.xml"/>
 	<Include file="StandbyStagingManager\_filelist.xml"/>
+	<Script file="WorldBuffChecker.lua"/>
 </Ui>

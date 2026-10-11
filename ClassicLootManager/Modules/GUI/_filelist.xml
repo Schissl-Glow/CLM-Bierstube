@@ -6,6 +6,7 @@
 	<Script file="UIFade.lua"/>
 	<Script file="Filters.lua"/>
 	<Script file="UnifiedGUI.lua"/>
+	<Script file="WorldBuffCheckerGUI.lua"/>
 	<Script file="UnifiedGUI_Standings.lua"/>
 	<Script file="UnifiedGUI_Raids.lua"/>
 	<Script file="UnifiedGUI_Profiles.lua"/>

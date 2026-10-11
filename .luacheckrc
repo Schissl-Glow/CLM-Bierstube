@@ -47,6 +47,12 @@ globals = {
 	"DevTool_AddData",
 	-- ElvUI
 	"ElvUI",
+	-- World Buff Checker (Classic structured aura API)
+	"C_UnitAuras",
+	"UnitExists",
+	"UnitIsVisible",
+	"UnitIsConnected",
+	"IsInGroup",
 	-- WoW
 	"C_ToyBox",
 	"C_TooltipInfo",
