@@ -49,7 +49,7 @@ function GUI:ShowDetails(player)
         local observation = player.buffs[buff.key]
         local text = buff.name .. ": " .. statusText(observation.status)
         if observation.status == "NOT_REQUIRED" then
-            text = text .. " â€” " .. statusText(observation.evidence)
+            text = text .. " - " .. statusText(observation.evidence)
         end
         if observation.activeSpellId then
             text = text .. " | " .. CLM.L["Active remaining at scan"] .. ": " .. duration(observation.activeRemaining)
@@ -92,7 +92,7 @@ end
 
 function GUI:CreateWindow()
     local window = AceGUI:Create("Window")
-    window:SetTitle("World Buff Checker â€” v1 TEST")
+    window:SetTitle("World Buff Checker - v1 TEST")
     window:SetWidth(900)
     window:SetHeight(730)
     window:EnableResize(false)

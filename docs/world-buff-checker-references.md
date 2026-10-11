@@ -74,3 +74,23 @@ The user's follow-up positively validates slot 5 on another raid member: 3538 se
 The same follow-up reports an invisible player (VISIBLE=false) with readable Chronoboon aura, relevant points and tooltip. Eight unique players were scanned: five had positive stored-buff evidence; three had no demonstrated Chronoboon. No trustworthy complete negative data was supplied for those three, so the fixture represents them as UNKNOWN.
 
 Visibility never gates aura enumeration or positive detection. It only constrains negative claims. The scanner additionally rechecks visibility and connection after enumeration to avoid treating a unit that became inaccessible during the scan as conclusively missing buffs.
+
+## Targeted negative-evidence correction
+
+The user subsequently reports active Zandalar alias 355365 observed during
+combat and requests that it remain ACTIVE without any observed Chronoboon.
+The existing alias mapping is retained and now has that explicit regression.
+
+The user clarified that original eight-/ten-member diagnostic reports do not
+yet exist. No raw report comparison is claimed. The eight-member description
+and a synthetic ten-member extension cover visible units without an observed
+Chronoboon, positive stored evidence on an invisible unit, and positive active
+Zandalar without storage. Group size is not a completeness signal.
+
+The API references above establish nullable aura observations, not an
+authoritative absence guarantee from a nil terminator. The v1 rule now requires
+an observed, schema-validated explicit zero for a stored buff in addition to
+the existing stable/visible/connected/enumeration checks before MISSING is
+allowed. Positive observations always override negative candidates across
+GUID aliases. This policy can conservatively leave a truly buffless player
+UNKNOWN when no Chronoboon is observed.

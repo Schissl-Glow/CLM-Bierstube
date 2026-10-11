@@ -35,6 +35,15 @@ local function boon(points)
     return { spellId = 349981, points = points, expirationTime = 999999 }
 end
 
+test("visible connected member without a boon is UNKNOWN despite enumeration ending", function()
+    local player = checker:Scan("with_dmf", apiFor({
+        raid1 = {guid = "visible-no-boon", auras = {{spellId = 1}, {spellId = 2}}},
+    }, true)).players[1]
+    eq(player.counts.missing, 0)
+    eq(player.counts.unknown, 7)
+    eq(player.status, "UNKNOWN")
+end)
+
 test("full Chronoboon for self and another raid member", function()
     local api = apiFor({
         player = { guid = "self", auras = {boon({120, 130, 140, 150, 160, 170, 180, 190, 23768})} },
@@ -144,8 +153,12 @@ test("party and solo tokens work without a CLM raid or peer addon", function()
         player = {guid = "self"}, party1 = {guid = "party"}, party4 = {guid = "last"},
     }))
     eq(#result.players, 3)
-    eq(result.players[1].counts.missing, 6)
-    eq(result.players[1].buffs.dmf.status, "NOT_REQUIRED")
+    -- A bounded aura list without a boon is not an authoritative negative.
+    for _, player in ipairs(result.players) do
+        eq(player.counts.missing, 0)
+        eq(player.counts.unknown, 6)
+        eq(player.buffs.dmf.status, "NOT_REQUIRED")
+    end
 end)
 
 test("canonical and evidenced alias IDs are recognized", function()
@@ -273,6 +286,84 @@ test("visibility lost during enumeration does not establish absence", function()
     local reads = 0
     api.UnitIsVisible = function() reads=reads+1; return reads==1 end
     eq(checker:Scan("with_dmf",api).players[1].counts.unknown,7)
+end)
+
+
+test("synthetic eight and ten member raids preserve positive evidence", function()
+    -- These are synthetic scenarios, not transcripts of unavailable reports.
+    for _, size in ipairs({8, 10}) do
+        local units = {}
+        for i = 1, size do
+            units["raid" .. i] = {guid = "fixture-" .. i, visible = i ~= 5}
+            if i <= 5 then
+                units["raid" .. i].auras = {boon({120,130,140,150,3538,170,180,190,23769})}
+            elseif i <= 8 then
+                units["raid" .. i].auras = {{spellId = 1}, {spellId = 2}}
+            else
+                units["raid" .. i].auras = {{spellId = 355365, expirationTime = 1120}}
+            end
+        end
+        units.player = units.raid1
+        local result = checker:Scan("with_dmf", apiFor(units, true))
+        eq(#result.players, size)
+        local stored, unconfirmed, active = 0, 0, 0
+        for _, player in ipairs(result.players) do
+            eq(player.counts.missing, 0)
+            if player.counts.stored == 7 then stored = stored + 1
+            elseif player.counts.active == 1 then
+                active = active + 1
+                eq(player.buffs.zandalar.status, "ACTIVE")
+                eq(player.buffs.zandalar.activeSpellId, 355365)
+                eq(player.buffs.zandalar.activeRemaining, 120)
+                eq(player.counts.unknown, 6)
+            else
+                unconfirmed = unconfirmed + 1
+                eq(player.counts.unknown, 7)
+            end
+        end
+        eq(stored, 5)
+        eq(unconfirmed, 3)
+        eq(active, size == 10 and 2 or 0)
+    end
+end)
+
+test("observed combat Zandalar alias works without Chronoboon", function()
+    for _, visible in ipairs({true, false}) do
+        local player = checker:Scan("with_dmf", apiFor({raid1 = {
+            guid = "combat-observation", visible = visible,
+            auras = {{spellId = 355365, expirationTime = 1180}},
+        }}, true)).players[1]
+        eq(player.buffs.zandalar.status, "ACTIVE")
+        eq(player.buffs.zandalar.activeRemaining, 180)
+        eq(player.counts.active, 1)
+        eq(player.counts.stored, 0)
+        eq(player.counts.missing, 0)
+        eq(player.counts.unknown, 6)
+    end
+end)
+
+test("positive alias on one token overrides explicit zero on another", function()
+    local result = checker:Scan("with_dmf", apiFor({
+        player = {guid = "same", auras = {boon({0,0,0,0,0,0,0,0,0})}},
+        raid1 = {guid = "same", auras = {{spellId = 355365}}},
+    }, true))
+    eq(#result.players, 1)
+    eq(result.players[1].buffs.zandalar.status, "ACTIVE")
+    eq(result.players[1].counts.active, 1)
+    eq(result.players[1].counts.missing, 6)
+end)
+
+test("MISSING requires validated explicit zeros plus accessible enumeration", function()
+    for _, connected in ipairs({true, false}) do
+        for _, visible in ipairs({true, false}) do
+            local player = checker:Scan("with_dmf", apiFor({raid1 = {
+                guid = "zero-slots", visible = visible, connected = connected,
+                auras = {boon({0,0,0,0,0,0,0,0,0})},
+            }}, true)).players[1]
+            eq(player.counts.missing, connected and visible and 7 or 0)
+            eq(player.counts.unknown, connected and visible and 0 or 7)
+        end
+    end
 end)
 
 print(tostring(tests) .. " world buff tests passed")

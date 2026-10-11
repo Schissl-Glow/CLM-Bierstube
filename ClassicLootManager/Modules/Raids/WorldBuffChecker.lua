@@ -108,7 +108,10 @@ local function evaluate(player, profile)
         for _, sample in ipairs(player.samples) do
             active = active or sample.active[buff.key]
             stored = stored or sample.stored[buff.key]
-            if sample.complete and (#sample.boons == 0 or sample.zero[buff.key]) then absent = true end
+            -- End-of-enumeration and visibility alone do not prove buff absence.
+            -- Require this buff's explicit zero in a schema-validated observed boon,
+            -- as well as a stable, connected, visible and uninterrupted scan.
+            if sample.complete and sample.zero[buff.key] then absent = true end
         end
         local evidence = active and "ACTIVE" or stored and "STORED" or absent and "MISSING" or "UNKNOWN"
         local required = buff.key ~= "warchief" and (buff.key ~= "dmf" or profile == "with_dmf")

@@ -35,6 +35,31 @@ establish absence. Even a fully readable invisible Chronoboon only supplies
 positive evidence; unseen requirements stay UNKNOWN without a reliable
 negative observation. A 255-index safety bound is not a Blizzard aura limit.
 
+### Conservative MISSING rule
+
+Neither visibility nor reaching nil at the end of the indexed aura list proves
+that an unobserved Chronoboon or world buff is absent. Therefore a player with
+no observed Chronoboon has UNKNOWN for every unobserved requirement, including
+the local player. Concrete active buffs still have priority; Zandalar alias
+355365 is accepted without a Chronoboon and during combat observations.
+
+MISSING requires all of the following for that individual buff:
+- No positive active or stored observation on any token of the same GUID.
+- A stable GUID, connection and visibility before/after uninterrupted indexed
+  enumeration, ending normally before the safety bound.
+- An observed Chronoboon decoded using the validated 1.15.9/70003 schema.
+- An explicit numeric zero in that buff's slot in every observed Chronoboon.
+
+This is a deliberately conservative v1 trust policy, not a Blizzard guarantee
+that visibility makes every remote aura list authoritative. A missing or
+malformed slot, an unconfirmed schema, or unobservable data remains UNKNOWN.
+Positive evidence from an incomplete or invisible unit is retained.
+
+There are no original eight-/ten-player diagnostic reports available for this
+correction, as clarified by the user. Regression scenarios are synthetic and
+based on the supplied observations; they are not replays of captured reports.
+The combat Zandalar 355365 observation is user-provided evidence.
+
 Overall status: known missing requirements => MISSING; otherwise unresolved
 requirements => UNKNOWN; otherwise stored requirements => READY_STORED;
 otherwise READY_ACTIVE. READY_STORED means the buffs still need releasing from
@@ -62,7 +87,7 @@ summary count.
    live addon. The existing Batch500-only ZIP does not contain this feature.
 2. Reload WoW. Open CLM and select the **Raids** tab. No CLM raid needs starting.
 3. Click **World Buff Checker**. The window initially has no scan results.
-4. Select **Mit DMF** or **Ohne DMF**, then click **Raid prÃ¼fen**.
+4. Select **Mit DMF** or **Ohne DMF**, then click **Raid prüfen**.
 5. Check one row per player, the four requirement counts and overall status.
    Click a row for all eight buff groups. Green ACTIVE and blue STORED must be
    distinguishable. Warchief remains optional even when stored.
@@ -71,7 +96,7 @@ summary count.
    safely missing solely because no Chronoboon was observed.
 7. Check Warchief 3538 seconds (58:58), DMF 23768/23769, zero/missing fields,
    active plus stored buffs, offline/distant members and the player/raid1 alias.
-8. Change the profile: results must clear without scanning. Click Raid prÃ¼fen
+8. Change the profile: results must clear without scanning. Click Raid prüfen
    again to refresh. Close/reopen the window and verify the displayed result is
    still the last manual snapshot.
 9. Verify normal CLM navigation, point display, auctions and the existing

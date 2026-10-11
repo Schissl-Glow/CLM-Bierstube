@@ -30,3 +30,15 @@ layout, multiplayer behavior or Blizzard timing.
 Existing Ledger/Replay, DKP, raid start/end, auction and communication code is
 outside this feature's write scope. Compare those paths with the base commit
 5a5787752c95a9ad495239ea1732425bea9a1d21 when reviewing the branch.
+
+The targeted correction adds a visible/connected/no-Chronoboon counterexample,
+synthetic eight- and ten-member groups, combat-observed Zandalar alias 355365
+without storage, and conflicting positive/zero evidence across GUID aliases.
+No original diagnostic reports were supplied or replayed. The ten-member
+distribution is a constructed regression, not a claim about a real raid.
+
+MISSING still has positive regression coverage for explicit zero slots in an
+observed, validated Chronoboon under the accessibility checks. The old
+party/solo-empty-list assertion is updated to UNKNOWN to reflect the corrected
+policy. GUI tests verify both the title and optional-buff separator use plain
+ASCII hyphens, preventing the two reported mojibake strings from returning.

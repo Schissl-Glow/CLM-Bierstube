@@ -53,6 +53,7 @@ assert(calls == 0, "Opening the window must not scan")
 local button, dropdown, rows, details
 for _, w in ipairs(widgets) do
     if w.kind == "Button" and w.SetTextValue == "Scan raid" then button = w end
+    if w.kind == "Window" then assert(w.SetTitleValue == "World Buff Checker - v1 TEST", "Window title has no mojibake") end
     if w.kind == "Dropdown" then dropdown = w end
     if w.kind == "CLMLibScrollingTable" then rows = w end
     if w.kind == "ScrollFrame" then details = w end
@@ -71,6 +72,7 @@ local detailText = table.concat(texts,"\n")
 assert(detailText:find("ACTIVE",1,true) and detailText:find("STORED",1,true), "Distinct active/stored detail labels")
 assert(detailText:find("Warchief",1,true) and detailText:find("NOT_REQUIRED",1,true), "Optional Warchief shown")
 assert(detailText:find("58:58",1,true), "Validated stored Warchief duration shown")
+assert(detailText:find("NOT_REQUIRED|r - |cff",1,true), "Optional buff separator has no mojibake")
 local oldCalls = calls
 dropdown.callbacks.OnValueChanged(dropdown, "OnValueChanged", "with_dmf")
 assert(calls == oldCalls and #rows.data == 0, "Profile change clears stale results")
