@@ -2565,4 +2565,34 @@ CLM.L["With DMF"] = "With DMF" -- notranslate
 CLM.L["Without DMF"] = "Without DMF" -- notranslate
 CLM.L["World Buff Checker"] = "World Buff Checker" -- notranslate
 CLM.L["World Buff Checker requires Classic Hardcore."] = "World Buff Checker requires Classic Hardcore." -- notranslate
+
+-- World Buff Checker v1.1
+CLM.L["A valid DKP roster is required."] = "A valid DKP roster is required." -- notranslate
+CLM.L["Already penalized."] = "Already penalized." -- notranslate
+CLM.L["Booking disabled: synchronized once-per-raid penalties are not available."] = "Booking disabled: synchronized once-per-raid penalties are not available." -- notranslate
+CLM.L["Booking is blocked."] = "Booking is blocked." -- notranslate
+CLM.L["CLM raid: %s | Roster: %s"] = "CLM raid: %s | Roster: %s" -- notranslate
+CLM.L["Confirm deduction: %s DKP"] = "Confirm deduction: %s DKP" -- notranslate
+CLM.L["Confirmed prior penalties: %d | Unverified accounts: %d"] = "Confirmed prior penalties: %d | Unverified accounts: %d" -- notranslate
+CLM.L["DKP deduction per player"] = "DKP deduction per player" -- notranslate
+CLM.L["DKP penalty preview"] = "DKP penalty preview" -- notranslate
+CLM.L["Deduct DKP"] = "Deduct DKP" -- notranslate
+CLM.L["Duration warning"] = "Duration warning" -- notranslate
+CLM.L["Duration warnings (+optional)"] = "Duration warnings (+optional)" -- notranslate
+CLM.L["Enter a finite positive DKP amount within roster precision."] = "Enter a finite positive DKP amount within roster precision." -- notranslate
+CLM.L["Ledger replay, sandbox or time travel prevents a reliable preview."] = "Ledger replay, sandbox or time travel prevents a reliable preview." -- notranslate
+CLM.L["Main/alt link cannot be resolved safely."] = "Main/alt link cannot be resolved safely." -- notranslate
+CLM.L["No current CLM raid."] = "No current CLM raid." -- notranslate
+CLM.L["Only CREATED or IN_PROGRESS raids can be used."] = "Only CREATED or IN_PROGRESS raids can be used." -- notranslate
+CLM.L["Player cannot be mapped."] = "Player cannot be mapped." -- notranslate
+CLM.L["Player or point account is outside the roster."] = "Player or point account is outside the roster." -- notranslate
+CLM.L["Point permissions are required."] = "Point permissions are required." -- notranslate
+CLM.L["Potential point accounts: %d | Total deduction: %s DKP"] = "Potential point accounts: %d | Total deduction: %s DKP" -- notranslate
+CLM.L["Preview expired. Create a new preview."] = "Preview expired. Create a new preview." -- notranslate
+CLM.L["Prior penalty status cannot be verified."] = "Prior penalty status cannot be verified." -- notranslate
+CLM.L["Profile or point account is locked."] = "Profile or point account is locked." -- notranslate
+CLM.L["Raid context is unavailable."] = "Raid context is unavailable." -- notranslate
+CLM.L["Scan the raid first."] = "Scan the raid first." -- notranslate
+CLM.L["This is a preview. No points have been booked."] = "This is a preview. No points have been booked." -- notranslate
+CLM.L["Too short"] = "Too short" -- notranslate
 end

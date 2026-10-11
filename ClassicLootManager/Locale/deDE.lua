@@ -2567,4 +2567,34 @@ CLM.L["No scan yet. Only the current Blizzard group is checked."] = "Noch keine 
 
 -- World Buff Checker v1: explicit English fallback where not translated.
 CLM.L["World Buff Checker"] = "World Buff Checker" -- notranslate
+
+-- World Buff Checker v1.1
+CLM.L["A valid DKP roster is required."] = "Ein gültiges DKP-Roster ist erforderlich."
+CLM.L["Already penalized."] = "Bereits bestraft."
+CLM.L["Booking disabled: synchronized once-per-raid penalties are not available."] = "Buchung gesperrt: Synchronisierte Einmal-Strafen pro Raid sind noch nicht verfügbar."
+CLM.L["Booking is blocked."] = "Buchung ist gesperrt."
+CLM.L["CLM raid: %s | Roster: %s"] = "CLM-Raid: %s | Roster: %s"
+CLM.L["Confirm deduction: %s DKP"] = "Abzug bestätigen: %s DKP"
+CLM.L["Confirmed prior penalties: %d | Unverified accounts: %d"] = "Bestätigt bereits bestraft: %d | Status ungeklärt: %d"
+CLM.L["DKP deduction per player"] = "DKP-Abzug pro Spieler"
+CLM.L["DKP penalty preview"] = "DKP-Strafvorschau"
+CLM.L["Deduct DKP"] = "DKP abziehen"
+CLM.L["Duration warning"] = "Laufzeitwarnung"
+CLM.L["Duration warnings (+optional)"] = "Laufzeit! (+opt.)"
+CLM.L["Enter a finite positive DKP amount within roster precision."] = "Endlichen positiven DKP-Betrag mit den Dezimalstellen des Rosters eingeben."
+CLM.L["Ledger replay, sandbox or time travel prevents a reliable preview."] = "Ledger-Replay, Sandbox oder Zeitreise verhindert eine zuverlässige Vorschau."
+CLM.L["Main/alt link cannot be resolved safely."] = "Main-/Alt-Verknüpfung nicht sicher auflösbar."
+CLM.L["No current CLM raid."] = "Kein aktueller CLM-Raid."
+CLM.L["Only CREATED or IN_PROGRESS raids can be used."] = "Nur erstellte oder laufende Raids sind zulässig."
+CLM.L["Player cannot be mapped."] = "Spieler nicht zuordenbar."
+CLM.L["Player or point account is outside the roster."] = "Spieler oder Punktekonto gehört nicht zum Roster."
+CLM.L["Point permissions are required."] = "Berechtigung zur Punkteänderung erforderlich."
+CLM.L["Potential point accounts: %d | Total deduction: %s DKP"] = "Betroffene Punktekonten (Vorschau): %d | Gesamtabzug: %s DKP"
+CLM.L["Preview expired. Create a new preview."] = "Vorschau abgelaufen. Neue Vorschau erstellen."
+CLM.L["Prior penalty status cannot be verified."] = "Frühere Strafe nicht zuverlässig überprüfbar."
+CLM.L["Profile or point account is locked."] = "Profil oder Punktekonto ist gesperrt."
+CLM.L["Raid context is unavailable."] = "Raid-Kontext ist nicht verfügbar."
+CLM.L["Scan the raid first."] = "Zuerst den Raid prüfen."
+CLM.L["This is a preview. No points have been booked."] = "Dies ist eine Vorschau. Es wurden keine Punkte gebucht."
+CLM.L["Too short"] = "Zu kurz"
 end

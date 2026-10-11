@@ -13,6 +13,7 @@ local BUFFS = {
 }
 local BY_SPELL, DMF = {}, {}
 for _, buff in ipairs(BUFFS) do
+    buff.minimumSeconds = (buff.key == "songflower" or buff.key == "warchief") and 3000 or 6600
     for _, id in ipairs(buff.ids) do
         BY_SPELL[id] = buff.key
         if buff.key == "dmf" then DMF[id] = true end
@@ -26,6 +27,33 @@ local MAX_AURAS = 255
 
 local function number(value)
     return type(value) == "number" and value == value and value >= 0 and value < math.huge
+end
+
+-- Keep the longest concrete observation, while retaining uncertainty in alternatives.
+local function mergeObservation(current, candidate)
+    if not candidate then return current end
+    local best = current or candidate
+    if number(candidate.remaining) and (not number(best.remaining) or candidate.remaining > best.remaining) then
+        best = candidate
+    end
+    return {
+        remaining = best.remaining, spellId = best.spellId,
+        unknownDuration = (current and current.unknownDuration) or candidate.unknownDuration
+            or not number(candidate.remaining),
+    }
+end
+
+local function durationStatus(active, stored, minimum)
+    local best
+    for _, observation in pairs({active = active, stored = stored}) do
+        if number(observation.remaining) and (not best or observation.remaining > best) then
+            best = observation.remaining
+        end
+    end
+    if best and best >= minimum then return "SUFFICIENT", best end
+    if not active and not stored then return "NOT_OBSERVED", nil end
+    if (active and active.unknownDuration) or (stored and stored.unknownDuration) then return "UNKNOWN", best end
+    return "TOO_SHORT", best
 end
 
 local function call(api, method, ...)
@@ -67,7 +95,7 @@ local function observe(api, unit, guid, now, schema)
                     if number(aura.expirationTime) and aura.expirationTime > 0 and number(now) then
                         remaining = math.max(0, aura.expirationTime - now)
                     end
-                    sample.active[key] = {spellId = aura.spellId, remaining = remaining}
+                    sample.active[key] = mergeObservation(sample.active[key], {spellId = aura.spellId, remaining = remaining})
                 elseif aura.spellId == BOON then
                     sample.boons[#sample.boons + 1] = aura
                 end
@@ -91,7 +119,7 @@ local function observe(api, unit, guid, now, schema)
                 allZero = false
                 local id = buff.key == "dmf" and aura.points[9] or nil
                 if buff.key ~= "dmf" or DMF[id] then
-                    sample.stored[buff.key] = {remaining = value, spellId = id}
+                    sample.stored[buff.key] = mergeObservation(sample.stored[buff.key], {remaining = value, spellId = id})
                 end
             end
         end
@@ -103,11 +131,13 @@ end
 local function evaluate(player, profile)
     player.buffs = {}
     player.counts = {active = 0, stored = 0, missing = 0, unknown = 0}
+    player.durationWarnings, player.optionalDurationWarnings = 0, 0
+    player.violations = {}
     for _, buff in ipairs(BUFFS) do
         local active, stored, absent
         for _, sample in ipairs(player.samples) do
-            active = active or sample.active[buff.key]
-            stored = stored or sample.stored[buff.key]
+            active = mergeObservation(active, sample.active[buff.key])
+            stored = mergeObservation(stored, sample.stored[buff.key])
             -- End-of-enumeration and visibility alone do not prove buff absence.
             -- Require this buff's explicit zero in a schema-validated observed boon,
             -- as well as a stable, connected, visible and uninterrupted scan.
@@ -120,6 +150,19 @@ local function evaluate(player, profile)
             activeRemaining = active and active.remaining, activeSpellId = active and active.spellId,
             storedRemaining = stored and stored.remaining, storedSpellId = stored and stored.spellId,
         }
+        result.durationStatus, result.bestRemaining = durationStatus(active, stored, buff.minimumSeconds)
+        result.minimumSeconds = buff.minimumSeconds
+        if result.durationStatus == "TOO_SHORT" then
+            if required then player.durationWarnings = player.durationWarnings + 1
+            else player.optionalDurationWarnings = player.optionalDurationWarnings + 1 end
+        end
+        if required and (evidence == "MISSING" or result.durationStatus == "TOO_SHORT") then
+            player.violations[#player.violations + 1] = {
+                buffKey = buff.key, name = buff.name,
+                kind = evidence == "MISSING" and "MISSING" or "TOO_SHORT",
+                minimumSeconds = buff.minimumSeconds, remaining = result.bestRemaining,
+            }
+        end
         player.buffs[buff.key] = result
         if required then
             local countKey = string.lower(evidence)
@@ -129,6 +172,7 @@ local function evaluate(player, profile)
     local counts = player.counts
     player.status = counts.missing > 0 and "MISSING" or counts.unknown > 0 and "UNKNOWN"
         or counts.stored > 0 and "READY_STORED" or "READY_ACTIVE"
+    player.penaltyEligible = #player.violations > 0
     player.samples = nil
 end
 
