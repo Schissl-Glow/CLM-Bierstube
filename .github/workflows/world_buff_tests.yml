@@ -12,3 +12,5 @@ jobs:
           luaVersion: "5.1.4"
       - run: lua tests/world_buff_checker_spec.lua
       - run: lua tests/world_buff_gui_spec.lua
+      - run: lua tests/world_buff_duration_spec.lua
+      - run: lua tests/world_buff_penalty_spec.lua

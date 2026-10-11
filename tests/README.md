@@ -42,3 +42,22 @@ observed, validated Chronoboon under the accessibility checks. The old
 party/solo-empty-list assertion is updated to UNKNOWN to reflect the corrected
 policy. GUI tests verify both the title and optional-buff separator use plain
 ASCII hyphens, preventing the two reported mojibake strings from returning.
+
+## v1.1 duration and fail-closed penalty previews
+
+Also run:
+- lua tests/world_buff_duration_spec.lua
+- lua tests/world_buff_penalty_spec.lua
+
+The Python runner and CI include all four test files. Existing v1 tests remain.
+Duration cases cover exact thresholds, frozen storage, adequate alternatives,
+unknown duration, optional buffs and independently retained evidence states.
+Preview cases cover GUID/main-alt grouping, validation and invalidation,
+authorization, actual CLM adapter lock/membership checks, confirmed-receipt
+exclusion, replay unavailability and independent client/reload sessions.
+GUI cases force even a disabled confirmation and assert no point/ledger write.
+
+Production prior-penalty status is UNKNOWN and every booking is blocked.
+Injected receipt states test the adapter contract only. The concurrency tests
+prove that blocked clients cannot debit, not that an enabled distributed
+idempotency protocol exists. Such a protocol is documented but not implemented.

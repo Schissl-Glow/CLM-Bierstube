@@ -5,5 +5,5 @@ from lupa.lua51 import LuaRuntime
 
 root = Path(__file__).resolve().parents[1]
 os.chdir(root)
-for filename in ("world_buff_checker_spec.lua", "world_buff_gui_spec.lua"):
+for filename in ("world_buff_checker_spec.lua", "world_buff_duration_spec.lua", "world_buff_penalty_spec.lua", "world_buff_gui_spec.lua"):
     LuaRuntime().execute((root / "tests" / filename).read_text(encoding="utf-8"))

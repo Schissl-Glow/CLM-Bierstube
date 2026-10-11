@@ -3,7 +3,7 @@ local widgets, calls = {}, 0
 local function widget(kind)
     local w = {kind = kind, callbacks = {}, children = {}}
     for _, method in ipairs({"SetTitle","SetLayout","SetWidth","SetHeight","SetFullWidth","SetText","SetLabel",
-        "SetValue","SetList","SetDisabled","SetDisplayCols","SetDisplayRows","EnableResize","EnableSelection"}) do
+        "SetValue","SetList","DisableButton","SetDisabled","SetDisplayCols","SetDisplayRows","EnableResize","EnableSelection"}) do
         w[method] = function(self, value) self[method .. "Value"] = value end
     end
     w.SetCallback = function(self, event, callback) self.callbacks[event] = callback end
@@ -18,7 +18,7 @@ local function widget(kind)
     widgets[#widgets+1] = w
     return w
 end
-local AceGUI = {Create = function(_, kind) return widget(kind) end}
+local AceGUI = {Create = function(_, kind) return widget(kind) end, Release = function(_, w) w.released = true end}
 LibStub = function(name)
     if name == "AceGUI-3.0" then return AceGUI end
     return {SORT_ASC = 1}
@@ -45,6 +45,7 @@ local CLM = {
 }
 CLM.RegisterModule = function(name, module) CLM.MODULES[name] = module end
 assert(loadfile("ClassicLootManager/Modules/Raids/WorldBuffChecker.lua"))("CLM", CLM)
+assert(loadfile("ClassicLootManager/Modules/Raids/WorldBuffPenalties.lua"))("CLM", CLM)
 assert(loadfile("ClassicLootManager/Modules/GUI/WorldBuffCheckerGUI.lua"))("CLM", CLM)
 local gui = CLM.GUI.WorldBuffChecker
 gui:Initialize()
@@ -53,7 +54,7 @@ assert(calls == 0, "Opening the window must not scan")
 local button, dropdown, rows, details
 for _, w in ipairs(widgets) do
     if w.kind == "Button" and w.SetTextValue == "Scan raid" then button = w end
-    if w.kind == "Window" then assert(w.SetTitleValue == "World Buff Checker - v1 TEST", "Window title has no mojibake") end
+    if w.kind == "Window" then assert(w.SetTitleValue == "World Buff Checker - v1.1 TEST", "Window title has no mojibake") end
     if w.kind == "Dropdown" then dropdown = w end
     if w.kind == "CLMLibScrollingTable" then rows = w end
     if w.kind == "ScrollFrame" then details = w end
@@ -95,3 +96,54 @@ assert(calls == oldCalls, "Raids entry opens without scanning")
 CLM.IsHardcore = function() return false end
 assert(entry.hidden(), "Entry is hidden outside Hardcore")
 print("PASS actual Raids UI entry and Hardcore gating")
+
+-- Exercise the production CLM adapter and preview controls with synthetic managers.
+CLM.IsHardcore = function() return true end
+CLM.CONSTANTS.POINT_TYPE = {DKP=0,EPGP=1}
+CLM.CONSTANTS.RAID_STATUS = {CREATED=0,IN_PROGRESS=1}
+local authorized, writes = true, 0
+CLM.MODULES.ACL.CheckLevel = function() return authorized end
+local profile = {GUID=function() return "synthetic-guid" end, Main=function() return "" end,
+    IsLocked=function() return false end, Name=function() return "Synthetic" end}
+local roster = {UID=function() return 7 end, GetPointType=function() return 0 end,
+    GetConfiguration=function() return 2 end, IsProfileInRoster=function(_,guid) return guid=="synthetic-guid" end}
+local raid = {UID=function() return "synthetic-raid" end, Roster=function() return roster end,
+    Status=function() return 0 end, Name=function() return "Synthetic raid" end}
+CLM.MODULES.RaidManager={GetRaid=function() return raid end, GetRaidByUid=function() return raid end}
+CLM.MODULES.RosterManager={GetRosterByUid=function() return roster end}
+CLM.MODULES.ProfileManager={GetProfileByGUID=function(_,guid) if guid=="synthetic-guid" then return profile end end}
+CLM.MODULES.LedgerManager={
+    Lag=function() return 0,0 end, Hash=function() return 1 end,
+    IsDisabled=function() return false end, IsInIncoherentState=function() return false end,
+    IsTimeTraveling=function() return false end, Submit=function() writes=writes+1 end,
+}
+CLM.MODULES.SandboxManager={IsSandbox=function() return false end}
+CLM.MODULES.PointManager={UpdatePoints=function() writes=writes+1 end, UpdateRaidPoints=function() writes=writes+1 end}
+gui:Show()
+button.callbacks.OnClick(button)
+assert(rows.data[1].cols[7].value=="7 (+0)", "Mandatory duration warnings have their own column")
+assert(writes==0, "Normal buff scan never books points")
+gui.deductButton.callbacks.OnClick(gui.deductButton)
+local previewWindow=gui.penaltyWindow
+local confirm=previewWindow.children[#previewWindow.children]
+assert(confirm.SetDisabledValue==true, "Unsafe booking confirmation is disabled")
+assert(confirm.SetTextValue=="Confirm deduction: 10 DKP", "Explicit amount on confirmation")
+confirm.callbacks.OnClick(confirm)
+assert(writes==0, "Even forced confirmation cannot bypass backend block")
+gui.deductButton.callbacks.OnClick(gui.deductButton)
+previewWindow=gui.penaltyWindow
+gui.amountInput.callbacks.OnTextChanged(gui.amountInput,"OnTextChanged","20")
+assert(previewWindow.visible==false, "Changing amount invalidates/hides preview")
+gui.deductButton.callbacks.OnClick(gui.deductButton)
+previewWindow=gui.penaltyWindow
+button.callbacks.OnClick(button)
+assert(previewWindow.visible==false, "New scan invalidates/hides preview")
+gui.deductButton.callbacks.OnClick(gui.deductButton)
+previewWindow=gui.penaltyWindow
+dropdown.callbacks.OnValueChanged(dropdown,"OnValueChanged","without_dmf")
+assert(previewWindow.visible==false, "Profile change invalidates/hides preview")
+authorized=false
+gui:Show()
+assert(gui.deductButton.SetDisabledValue==true and gui.amountInput.SetDisabledValue==true, "Permission gates controls")
+assert(writes==0)
+print("PASS duration warnings, preview invalidation and production booking block")
