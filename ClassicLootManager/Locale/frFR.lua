@@ -2537,4 +2537,32 @@ CLM.L["|cff00ee44Open:|r English Auction with highest bidder announcement. Highe
 CLM.L["|cff00ee44Single-Priced:|r Static value mode. Only bidding Base value is supported.\n\n|cff00ee44Ascending:|r Ranged value mode. Allows bidding any value in |cff44ee00<base, max>|r.\n\n|cff00ee44Tiered:|r Ranged value mode. Allows bidding only specific values. Up to 5 tiers are configurable in |cff44ee00<base, small, medium, large, max>|r."] = "|cff00ee44Prix unique:|r Mode à valeur fixe. Seule la Valeur d’offre de base est supportée.n\n|cff00ee44Montante:|r Mode à intervalle de valeur. Permet d’offrir n’importe quelle valeur entre |cff44ee00<base, max>|r.\n\n|cff00ee44Par niveau:|r Mode à intervalle de valeur. Permet d’offrir uniquement des valeurs spécifiques. Jusqu’à 5 valeurs sont configurables dans |cff44ee00<base, petit, médium, grand, max>|r."
 -- ClassicLootManager/Modules/Common/Version/Version.lua:69
 CLM.L["|cffcc0000Your Core Loot Manager is significantly out of date.|r AddOn communication has been disabled. Please update as soon as possible."] = "|cffcc0000Core Loot Manager est obsolète.|r La communication de l’addon a été désactivée. Veuillez mettre à jour dès que possible."
+
+-- World Buff Checker v1: explicit English fallback where not translated.
+CLM.L["%d units could not be identified."] = "%d units could not be identified." -- notranslate
+CLM.L["ACTIVE"] = "ACTIVE" -- notranslate
+CLM.L["Active remaining at scan"] = "Active remaining at scan" -- notranslate
+CLM.L["Check profile"] = "Check profile" -- notranslate
+CLM.L["Chronoboon schema is unverified for this client."] = "Chronoboon schema is unverified for this client." -- notranslate
+CLM.L["Duration unknown"] = "Duration unknown" -- notranslate
+CLM.L["MISSING"] = "MISSING" -- notranslate
+CLM.L["Manual scan: %d players. Results remain unchanged until the next scan."] = "Manual scan: %d players. Results remain unchanged until the next scan." -- notranslate
+CLM.L["NOT_REQUIRED"] = "NOT_REQUIRED" -- notranslate
+CLM.L["No scan yet. Only the current Blizzard group is checked."] = "No scan yet. Only the current Blizzard group is checked." -- notranslate
+CLM.L["Not visible or offline: only positive observations are retained."] = "Not visible or offline: only positive observations are retained." -- notranslate
+CLM.L["Overall status"] = "Overall status" -- notranslate
+CLM.L["Profile changed. Scan the raid again."] = "Profile changed. Scan the raid again." -- notranslate
+CLM.L["READY_ACTIVE"] = "READY_ACTIVE" -- notranslate
+CLM.L["READY_STORED"] = "READY_STORED" -- notranslate
+CLM.L["STORED"] = "STORED" -- notranslate
+CLM.L["Scan raid"] = "Scan raid" -- notranslate
+CLM.L["Select a player for buff details."] = "Select a player for buff details." -- notranslate
+CLM.L["Six common buffs are required; DMF follows the profile. Warchief is optional."] = "Six common buffs are required; DMF follows the profile. Warchief is optional." -- notranslate
+CLM.L["Stored remaining (frozen)"] = "Stored remaining (frozen)" -- notranslate
+CLM.L["UNKNOWN"] = "UNKNOWN" -- notranslate
+CLM.L["Warchief is optional and excluded from required counts."] = "Warchief is optional and excluded from required counts." -- notranslate
+CLM.L["With DMF"] = "With DMF" -- notranslate
+CLM.L["Without DMF"] = "Without DMF" -- notranslate
+CLM.L["World Buff Checker"] = "World Buff Checker" -- notranslate
+CLM.L["World Buff Checker requires Classic Hardcore."] = "World Buff Checker requires Classic Hardcore." -- notranslate
 end

@@ -2564,4 +2564,7 @@ CLM.L["%d units could not be identified."] = "%d Einheiten konnten nicht identif
 CLM.L["Profile changed. Scan the raid again."] = "Profil geändert. Raid erneut prüfen."
 CLM.L["Six common buffs are required; DMF follows the profile. Warchief is optional."] = "Sechs gemeinsame Buffs sind Pflicht; DMF folgt dem Profil. Warchief ist optional."
 CLM.L["No scan yet. Only the current Blizzard group is checked."] = "Noch keine Prüfung. Geprüft wird die aktuelle Blizzard-Gruppe."
+
+-- World Buff Checker v1: explicit English fallback where not translated.
+CLM.L["World Buff Checker"] = "World Buff Checker" -- notranslate
 end

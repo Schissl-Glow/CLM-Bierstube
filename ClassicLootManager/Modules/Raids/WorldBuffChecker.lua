@@ -56,7 +56,7 @@ local function observe(api, unit, guid, now, schema)
     if type(api.GetAuraDataByIndex) == "function" then
         for index = 1, MAX_AURAS do
             local ok, aura = pcall(api.GetAuraDataByIndex, unit, index, "HELPFUL")
-            if not ok then valid = false; break end
+            if not ok then break end
             if aura == nil then sample.complete = valid; break end
             if type(aura) ~= "table" or not number(aura.spellId) or aura.spellId < 1 then
                 valid = false

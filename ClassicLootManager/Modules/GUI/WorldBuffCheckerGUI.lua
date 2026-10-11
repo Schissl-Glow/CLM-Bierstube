@@ -1,19 +1,27 @@
 local _, CLM = ...
 local AceGUI = LibStub("AceGUI-3.0")
-local L = CLM.L
 local COLORS = {
     ACTIVE = "44dd66", STORED = "55aaff", MISSING = "ff6666",
     UNKNOWN = "ffcc55", NOT_REQUIRED = "aaaaaa",
     READY_ACTIVE = "44dd66", READY_STORED = "55aaff",
 }
+local STATUS_LABELS = {
+    ACTIVE = CLM.L["ACTIVE"],
+    STORED = CLM.L["STORED"],
+    MISSING = CLM.L["MISSING"],
+    UNKNOWN = CLM.L["UNKNOWN"],
+    NOT_REQUIRED = CLM.L["NOT_REQUIRED"],
+    READY_ACTIVE = CLM.L["READY_ACTIVE"],
+    READY_STORED = CLM.L["READY_STORED"],
+}
 local GUI = {}
 
 local function statusText(status)
-    return "|cff" .. (COLORS[status] or "ffffff") .. L[status] .. "|r"
+    return "|cff" .. (COLORS[status] or "ffffff") .. (STATUS_LABELS[status] or status) .. "|r"
 end
 
 local function duration(seconds)
-    if seconds == nil then return L["Duration unknown"] end
+    if seconds == nil then return CLM.L["Duration unknown"] end
     seconds = math.floor(seconds)
     return string.format("%d:%02d", math.floor(seconds / 60), seconds % 60)
 end
@@ -33,7 +41,7 @@ end
 function GUI:ShowDetails(player)
     self.details:ReleaseChildren()
     if not player then
-        label(self.details, L["Select a player for buff details."])
+        label(self.details, CLM.L["Select a player for buff details."])
         return
     end
     label(self.details, player.name)
@@ -44,17 +52,17 @@ function GUI:ShowDetails(player)
             text = text .. " â€” " .. statusText(observation.evidence)
         end
         if observation.activeSpellId then
-            text = text .. " | " .. L["Active remaining at scan"] .. ": " .. duration(observation.activeRemaining)
+            text = text .. " | " .. CLM.L["Active remaining at scan"] .. ": " .. duration(observation.activeRemaining)
         end
         if observation.storedRemaining then
-            text = text .. " | " .. L["Stored remaining (frozen)"] .. ": " .. duration(observation.storedRemaining)
+            text = text .. " | " .. CLM.L["Stored remaining (frozen)"] .. ": " .. duration(observation.storedRemaining)
             if observation.storedSpellId then text = text .. " (ID " .. observation.storedSpellId .. ")" end
         end
-        if buff.key == "warchief" then text = text .. " | " .. L["Warchief is optional and excluded from required counts."] end
+        if buff.key == "warchief" then text = text .. " | " .. CLM.L["Warchief is optional and excluded from required counts."] end
         label(self.details, text)
     end
     if not player.visible or not player.connected then
-        label(self.details, L["Not visible or offline: only positive observations are retained."])
+        label(self.details, CLM.L["Not visible or offline: only positive observations are retained."])
     end
 end
 
@@ -73,11 +81,11 @@ function GUI:Scan()
     self.rows:ClearSelection()
     self.rows:SetData(rows)
     self:ShowDetails(nil)
-    local text = string.format(L["Manual scan: %d players. Results remain unchanged until the next scan."], #rows)
-    if result.error then text = L["World Buff Checker requires Classic Hardcore."] end
-    if not result.schemaConfirmed then text = text .. " " .. L["Chronoboon schema is unverified for this client."] end
+    local text = string.format(CLM.L["Manual scan: %d players. Results remain unchanged until the next scan."], #rows)
+    if result.error then text = CLM.L["World Buff Checker requires Classic Hardcore."] end
+    if not result.schemaConfirmed then text = text .. " " .. CLM.L["Chronoboon schema is unverified for this client."] end
     if result.skippedUnits > 0 then
-        text = text .. " " .. string.format(L["%d units could not be identified."], result.skippedUnits)
+        text = text .. " " .. string.format(CLM.L["%d units could not be identified."], result.skippedUnits)
     end
     self.summary:SetText(text)
 end
@@ -93,9 +101,9 @@ function GUI:CreateWindow()
     self.window = window
 
     local profile = AceGUI:Create("Dropdown")
-    profile:SetLabel(L["Check profile"])
+    profile:SetLabel(CLM.L["Check profile"])
     profile:SetWidth(230)
-    profile:SetList({with_dmf = L["With DMF"], without_dmf = L["Without DMF"]}, {"with_dmf", "without_dmf"})
+    profile:SetList({with_dmf = CLM.L["With DMF"], without_dmf = CLM.L["Without DMF"]}, {"with_dmf", "without_dmf"})
     profile:SetValue(self.profile)
     profile:SetCallback("OnValueChanged", function(_, _, value)
         self.profile = value
@@ -103,24 +111,24 @@ function GUI:CreateWindow()
         self.rows:ClearSelection()
         self.rows:SetData({})
         self:ShowDetails(nil)
-        self.summary:SetText(L["Profile changed. Scan the raid again."])
+        self.summary:SetText(CLM.L["Profile changed. Scan the raid again."])
     end)
     window:AddChild(profile)
     local scan = AceGUI:Create("Button")
-    scan:SetText(L["Scan raid"])
+    scan:SetText(CLM.L["Scan raid"])
     scan:SetWidth(180)
     scan:SetDisabled(not CLM.IsHardcore())
     scan:SetCallback("OnClick", function() self:Scan() end)
     window:AddChild(scan)
 
-    label(window, L["Six common buffs are required; DMF follows the profile. Warchief is optional."])
-    self.summary = label(window, L["No scan yet. Only the current Blizzard group is checked."])
+    label(window, CLM.L["Six common buffs are required; DMF follows the profile. Warchief is optional."])
+    self.summary = label(window, CLM.L["No scan yet. Only the current Blizzard group is checked."])
     local rows = AceGUI:Create("CLMLibScrollingTable")
     rows:SetDisplayCols({
-        {name = L["Player"], width = 180, sort = LibStub("ScrollingTable").SORT_ASC},
-        {name = L["ACTIVE"], width = 65}, {name = L["STORED"], width = 90},
-        {name = L["MISSING"], width = 75}, {name = L["UNKNOWN"], width = 90},
-        {name = L["Overall status"], width = 230},
+        {name = CLM.L["Player"], width = 180, sort = LibStub("ScrollingTable").SORT_ASC},
+        {name = CLM.L["ACTIVE"], width = 65}, {name = CLM.L["STORED"], width = 90},
+        {name = CLM.L["MISSING"], width = 75}, {name = CLM.L["UNKNOWN"], width = 90},
+        {name = CLM.L["Overall status"], width = 230},
     })
     rows:SetDisplayRows(13, 18)
     rows:EnableSelection(true)
